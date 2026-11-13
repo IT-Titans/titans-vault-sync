@@ -1,0 +1,13 @@
+# pnpm 10 and later read install settings from this file, not from .npmrc.
+
+# The app imports packages that are only transitive dependencies
+# (for example tailwindcss through @nuxt/ui), so they must be hoisted.
+shamefullyHoist: true
+
+# Dependency build scripts are reviewed explicitly. None of them is needed:
+# esbuild and @parcel/watcher ship prebuilt binaries as optional dependencies,
+# and vue-demi already defaults to Vue 3.
+allowBuilds:
+  '@parcel/watcher': false
+  esbuild: false
+  vue-demi: false
