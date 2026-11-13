@@ -1,4 +1,4 @@
-import {AccessToken, TokenCredential} from "@azure/core-auth";
+import type {AccessToken, TokenCredential} from "@azure/core-auth";
 
 
 export class StaticAccessTokenCredential implements TokenCredential {
