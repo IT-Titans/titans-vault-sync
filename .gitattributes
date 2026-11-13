@@ -1,0 +1,15 @@
+# Normalise line endings: text files are stored with LF in the repository.
+* text=auto eol=lf
+
+# Windows command scripts need CRLF.
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Binary files are never converted.
+*.ico binary
+*.png binary
+*.jpg binary
+*.woff2 binary
+
+# Generated file: keep it out of language statistics and collapse it in diffs.
+pnpm-lock.yaml linguist-generated=true
