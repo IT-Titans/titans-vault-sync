@@ -1,4 +1,3 @@
-import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
 
 // The server routes are tested as plain h3 handlers, without building the Nuxt app.
@@ -7,7 +6,8 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   resolve: {
     alias: {
-      "#imports": fileURLToPath(new URL("./test/stubs/nitro-imports.ts", import.meta.url)),
+      // A leading slash is resolved against the project root.
+      "#imports": "/test/stubs/nitro-imports.ts",
     },
   },
   test: {
