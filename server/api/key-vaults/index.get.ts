@@ -77,19 +77,27 @@ async function mergeVaults(leftVault: SecretProperties[], rightVault: SecretProp
         continue;
       }
 
-      let leftCredential = "";
-      let rightCredential = "";
-      if (left.enabled) {
-        const credential = await getSecret(left.name, vaultNames.leftVaultName);
-
-        leftCredential = credential.value ?? "";
+      if (!left.enabled || !right.enabled) {
+        // Enabled in one vault and disabled in the other. The two differ,
+        // whichever side is disabled. Azure does not return the value of a
+        // disabled secret, so there is nothing to compare. The row is reported
+        // as not enabled, and the user interface then offers no copy in either
+        // direction: a copy would read the disabled secret, or overwrite it
+        // with an enabled one.
+        result.push({
+          id: left.id || "",
+          name: left.name,
+          enabled: false,
+          leftVault: true,
+          rightVault: true,
+          conflicts: true,
+          mergeState: MergeState.conflict
+        });
+        continue;
       }
 
-      if (right.enabled) {
-        const credential = await getSecret(right.name,vaultNames.rightVaultName)
-        rightCredential = credential.value ?? "";
-
-      }
+      const leftCredential = (await getSecret(left.name, vaultNames.leftVaultName)).value ?? "";
+      const rightCredential = (await getSecret(right.name, vaultNames.rightVaultName)).value ?? "";
 
       const secretsAreEqual =
         leftCredential === rightCredential
@@ -97,7 +105,7 @@ async function mergeVaults(leftVault: SecretProperties[], rightVault: SecretProp
       result.push({
         id: left.id || "",
         name: left.name,
-        enabled: left.enabled ?? false,
+        enabled: true,
         leftVault: true,
         rightVault: true,
         conflicts: !secretsAreEqual,

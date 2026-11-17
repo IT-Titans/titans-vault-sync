@@ -6,6 +6,7 @@ import { createError, defineEventHandler, getQuery, readBody, sendRedirect } fro
 import { getUserSession, requireUserSession, setUserSession } from "../node_modules/nuxt-auth-utils/dist/runtime/server/utils/session.js";
 import { defineOAuthMicrosoftEventHandler } from "../node_modules/nuxt-auth-utils/dist/runtime/server/lib/oauth/microsoft.js";
 import { azure } from "./helpers/fake-key-vault";
+import { resetRuntimeConfig, useRuntimeConfig } from "./stubs/nitro-imports";
 
 vi.mock("@azure/identity", async () => {
   const fake = await import("./helpers/fake-key-vault");
@@ -27,7 +28,9 @@ vi.stubGlobal("getUserSession", getUserSession);
 vi.stubGlobal("requireUserSession", requireUserSession);
 vi.stubGlobal("setUserSession", setUserSession);
 vi.stubGlobal("defineOAuthMicrosoftEventHandler", defineOAuthMicrosoftEventHandler);
+vi.stubGlobal("useRuntimeConfig", useRuntimeConfig);
 
 beforeEach(() => {
   azure.reset();
+  resetRuntimeConfig();
 });

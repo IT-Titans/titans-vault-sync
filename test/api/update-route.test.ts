@@ -1,5 +1,6 @@
-import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createTestApp } from "../helpers/app";
+import { captureConsoleError } from "../helpers/console";
 import { azure, restError, vaultUrl } from "../helpers/fake-key-vault";
 
 const SECRET_VALUE = "value-only-the-left-vault-knows";
@@ -207,31 +208,102 @@ describe("POST /api/key-vaults/update", () => {
   });
 
   describe("failures", () => {
-    it("writes nothing when the secret does not exist in the source vault", async () => {
+    let logged: ReturnType<typeof captureConsoleError>;
+
+    beforeEach(() => {
+      logged = captureConsoleError();
+    });
+
+    afterEach(() => {
+      logged.restore();
+    });
+
+    /** A failure as the SDK reports it: the request it sent travels with the error. */
+    function failureCarryingTheValue(statusCode: number, code: string) {
+      return Object.assign(restError(`Request failed while writing ${SECRET_VALUE}.`, statusCode, code), {
+        request: { url: `${vaultUrl("right-vault")}/secrets/example-secret`, body: JSON.stringify({ value: SECRET_VALUE }) },
+      });
+    }
+
+    it("answers 404 and writes nothing when the secret does not exist in the source vault", async () => {
       const response = await postUpdate(copyRequest({ secretName: "no-such-secret" }));
 
-      expect(response.ok).toBe(false);
+      expect(response.status).toBe(404);
       expect(azure.callsOf("set")).toEqual([]);
       expect(azure.valueOf("right-vault", "no-such-secret")).toBeUndefined();
     });
 
-    // Defect: the route lets the SDK error through as a 500. A missing secret
-    // is a client error. Mapping SDK errors to status codes is a design
-    // decision that is not made in this change.
-    it.skip("answers 404 when the secret does not exist in the source vault", async () => {
-      const response = await postUpdate(copyRequest({ secretName: "no-such-secret" }));
+    it("answers 404 when a vault does not exist", async () => {
+      const response = await postUpdate(copyRequest({ rightVaultName: "missing-vault" }));
 
       expect(response.status).toBe(404);
     });
 
-    it("does not put the secret value into the response when the write fails", async () => {
-      azure.failOn("right-vault", "set", restError("Caller is not authorized to perform action on resource.", 403, "Forbidden"));
+    it("passes on no detail of the Key Vault error", async () => {
+      const response = await postUpdate(copyRequest({ secretName: "no-such-secret" }));
+      const text = await response.text();
+
+      // The text of the SDK error and the address of the vault stay on the server.
+      expect(text).not.toContain("was not found in this key vault");
+      expect(text).not.toContain("vault.azure.net");
+      expect(JSON.parse(text)).toMatchObject({ statusCode: 404, statusMessage: "Secret or vault not found" });
+    });
+
+    it.each([
+      ["403 when the app may not write to the target vault", 403, "Forbidden", 403],
+      ["409 when the secret is in a deleted but recoverable state", 409, "Conflict", 409],
+      ["429 when Key Vault throttles the app", 429, "TooManyRequests", 429],
+      ["502 when Key Vault itself fails", 503, "ServiceUnavailable", 502],
+      // A 401 from Key Vault means the credential of the app was refused. For
+      // the caller that is a fault of the server, and 401 would read as "sign in again".
+      ["500 when Key Vault refuses the credential of the app", 401, "Unauthorized", 500],
+    ])("answers %s", async (_label, vaultStatus, code, expected) => {
+      azure.failOn("right-vault", "set", restError("Key Vault refused.", vaultStatus, code));
+
+      const response = await postUpdate(copyRequest());
+
+      expect(response.status).toBe(expected);
+      expect(azure.valueOf("right-vault", "example-secret")).toBeUndefined();
+    });
+
+    it("answers 403 when the source secret is disabled", async () => {
+      azure.seed("left-vault", { "example-secret": { value: SECRET_VALUE, enabled: false } });
+
+      const response = await postUpdate(copyRequest());
+
+      expect(response.status).toBe(403);
+      expect(azure.callsOf("set")).toEqual([]);
+    });
+
+    it("answers 500 when the failure did not come from Key Vault", async () => {
+      // What the credential reports when the client secret of the app has expired.
+      const failure = Object.assign(new Error("invalid_client"), { name: "AuthenticationError", statusCode: 401 });
+      azure.failOn("left-vault", "get", failure);
+
+      const response = await postUpdate(copyRequest());
+
+      expect(response.status).toBe(500);
+    });
+
+    it.each([403, 503])("puts the secret value neither into the response nor into the log when the write fails with %i", async (vaultStatus) => {
+      azure.failOn("right-vault", "set", failureCarryingTheValue(vaultStatus, "Failure"));
 
       const response = await postUpdate(copyRequest());
 
       expect(response.ok).toBe(false);
       expect(await response.text()).not.toContain(SECRET_VALUE);
+      expect(logged.text()).not.toContain(SECRET_VALUE);
       expect(azure.valueOf("right-vault", "example-secret")).toBeUndefined();
+    });
+
+    it("logs what failed, so the cause can be found without the response", async () => {
+      azure.failOn("right-vault", "set", restError("Key Vault refused.", 403, "ForbiddenByRbac"));
+
+      await postUpdate(copyRequest());
+
+      expect(logged.count()).toBe(1);
+      expect(logged.text()).toContain("ForbiddenByRbac");
+      expect(logged.text()).toContain("403");
     });
   });
 });
