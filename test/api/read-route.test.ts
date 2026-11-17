@@ -158,26 +158,45 @@ describe("GET /api/key-vaults", () => {
       expect(azure.callsOf("get")).toEqual([]);
     });
 
-    it.each([
+    // A secret that is enabled in one vault and disabled in the other differs,
+    // whichever side is disabled. The row is reported as not enabled, which is
+    // what makes the user interface offer no copy in either direction.
+    describe.each([
       ["left-vault", "right-vault"],
       ["right-vault", "left-vault"],
-    ])("never reads the value of a secret that is disabled in the %s", async (disabledIn, enabledIn) => {
-      azure.seed(disabledIn, { shared: { value: "old-value", enabled: false } });
-      azure.seed(enabledIn, { shared: "current-value" });
+    ])("a secret that is disabled only in the %s", (disabledIn, enabledIn) => {
+      it("is reported as a conflict that cannot be copied", async () => {
+        azure.seed(disabledIn, { shared: { value: "old-value", enabled: false } });
+        azure.seed(enabledIn, { shared: "current-value" });
 
-      await compare();
+        expect((await compare()).shared).toMatchObject({
+          enabled: false,
+          leftVault: true,
+          rightVault: true,
+          conflicts: true,
+          mergeState: MergeState.conflict,
+        });
+      });
 
-      // Azure refuses to return the value of a disabled secret.
-      expect(azure.callsOf("get")).toEqual([
-        { vaultUrl: vaultUrl(enabledIn), operation: "get", name: "shared" },
-      ]);
+      it("is a conflict even when the enabled secret has an empty value", async () => {
+        azure.seed(disabledIn, { shared: { value: "old-value", enabled: false } });
+        azure.seed(enabledIn, { shared: "" });
+
+        expect((await compare()).shared).toMatchObject({ conflicts: true, mergeState: MergeState.conflict });
+      });
+
+      it("reads no value, because there is nothing to compare it with", async () => {
+        azure.seed(disabledIn, { shared: { value: "old-value", enabled: false } });
+        azure.seed(enabledIn, { shared: "current-value" });
+
+        await compare();
+
+        // Azure refuses to return the value of a disabled secret.
+        expect(azure.callsOf("get")).toEqual([]);
+      });
     });
 
-    // Defect: the row takes "enabled" from the left vault only. A secret that
-    // is disabled on the left and enabled on the right is reported with
-    // enabled=false, the mirrored case with enabled=true, although both are
-    // the same situation. Which answer is right is a product decision.
-    it.skip("reports a secret that is disabled in one vault the same way from either side", async () => {
+    it("reports a secret that is disabled in one vault the same way from either side", async () => {
       azure.seed("left-vault", { shared: { value: "old-value", enabled: false } });
       azure.seed("right-vault", { shared: "current-value" });
       const disabledOnTheLeft = (await compare()).shared!;
@@ -188,6 +207,7 @@ describe("GET /api/key-vaults", () => {
 
       expect(disabledOnTheLeft.enabled).toBe(disabledOnTheRight.enabled);
       expect(disabledOnTheLeft.mergeState).toBe(disabledOnTheRight.mergeState);
+      expect(disabledOnTheLeft.conflicts).toBe(disabledOnTheRight.conflicts);
     });
 
     it("reads values only for secrets that exist in both vaults", async () => {

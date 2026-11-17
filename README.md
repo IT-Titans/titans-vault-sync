@@ -58,7 +58,7 @@ az role assignment create \
 3. Select **Load Vaults**. The table lists every secret name found in either vault, with one of four states:
    - `Merged`: the secret exists in both vaults with the same value.
    - `Mergeable`: the secret exists in one vault only and can be copied to the other.
-   - `Conflict`: the secret exists in both vaults with different values. You decide which side wins.
+   - `Conflict`: the secret exists in both vaults with different values, and you decide which side wins. A secret that is enabled in one vault and disabled in the other is also a conflict. It is shown as not enabled and cannot be copied; enable or disable it in Azure first.
    - `Disabled`: the secret is disabled and cannot be copied.
 4. Open the action menu of a row and choose the vault to copy to. The copy starts immediately, without a confirmation dialog, and creates a new version of the secret in the target vault.
 
