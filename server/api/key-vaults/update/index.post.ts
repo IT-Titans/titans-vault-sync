@@ -21,13 +21,16 @@ export default defineEventHandler(async (event) => {
     if (!secretLeft.value) {
       throw Error(`Cannot update keyVault for ${body.secretName}`);
     }
-    return await rightVaultClient.setSecret(body.secretName, secretLeft.value);
+    await rightVaultClient.setSecret(body.secretName, secretLeft.value);
+    return {name: body.secretName};
   }
 
   const secretRight = await rightVaultClient.getSecret(body.secretName);
   if (!secretRight.value) {
     throw Error(`Cannot update keyVault for ${body.secretName}`);
   }
-  return await leftVaultClient.setSecret(body.secretName, secretRight.value);
-
+  // setSecret returns the written secret including its value. Only the name
+  // goes back to the browser.
+  await leftVaultClient.setSecret(body.secretName, secretRight.value);
+  return {name: body.secretName};
 })

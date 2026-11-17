@@ -92,6 +92,17 @@ describe("POST /api/key-vaults/update", () => {
       expect(azure.valueOf("right-vault", "example-secret")).toBe(SECRET_VALUE);
     });
 
+    it.each(["leftToRight", "rightToLeft"])("does not send the copied value back to the browser (%s)", async (direction) => {
+      azure.seed("right-vault", { "example-secret": SECRET_VALUE });
+
+      const response = await postUpdate(copyRequest({ direction }));
+      const text = await response.text();
+
+      expect(response.status).toBe(200);
+      expect(text).not.toContain(SECRET_VALUE);
+      expect(JSON.parse(text)).toEqual({ name: "example-secret" });
+    });
+
     it.each(["leftToRight", "rightToLeft"])("refuses to copy an empty value (%s)", async (direction) => {
       azure.seed("left-vault", { "example-secret": "" });
       azure.seed("right-vault", { "example-secret": "" });
