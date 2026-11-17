@@ -16,6 +16,11 @@ const isDarkMode = computed({
     (colorMode.preference = colorMode.value === "dark" ? "light" : "dark"),
 });
 
+// A named handler returns nothing, which is what the button's click type expects.
+function toggleColorMode() {
+  isDarkMode.value = !isDarkMode.value;
+}
+
 const items = [
   [
     {
@@ -41,7 +46,7 @@ const items = [
               ? 'i-lucide-moon'
               : 'i-lucide-sun'
           "
-          @click="isDarkMode = !isDarkMode"
+          @click="toggleColorMode"
         />
       </div>
       <UCard variant="subtle" class="max-h-[calc(100vh-100px)]">
