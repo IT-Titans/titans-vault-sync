@@ -58,6 +58,98 @@ describe("POST /api/key-vaults/update", () => {
     });
   });
 
+  describe("validation", () => {
+    async function expectRejected(response: Response) {
+      expect(response.status).toBe(400);
+      // Nothing may reach Azure before the input is known to be valid.
+      expect(azure.credentialsCreated).toBe(0);
+      expect(azure.clientsCreated).toEqual([]);
+    }
+
+    it("rejects a request without a body", async () => {
+      await expectRejected(await app.request("POST", "/api/key-vaults/update", { cookie }));
+    });
+
+    it("rejects a body that is not valid JSON", async () => {
+      await expectRejected(await app.request("POST", "/api/key-vaults/update", { cookie, rawBody: "{\"leftVaultName\": " }));
+    });
+
+    it.each([
+      ["null", null],
+      ["a string", "left-vault"],
+      ["an array", ["left-vault", "right-vault", "example-secret", "leftToRight"]],
+    ])("rejects a body that is %s", async (_label, body) => {
+      await expectRejected(await postUpdate(body));
+    });
+
+    it.each(["leftVaultName", "rightVaultName", "secretName", "direction"])("rejects a body without %s", async (field) => {
+      await expectRejected(await postUpdate(copyRequest({ [field]: undefined })));
+    });
+
+    it.each([
+      ["a number as vault name", { leftVaultName: 42 }],
+      ["an object as secret name", { secretName: { name: "example-secret" } }],
+    ])("rejects %s", async (_label, overrides) => {
+      await expectRejected(await postUpdate(copyRequest(overrides)));
+    });
+
+    // An unknown direction used to be treated as "right to left" and
+    // overwrote the left vault.
+    it.each(["sideways", "LeftToRight", ""])("rejects the unknown direction \"%s\" and writes nothing", async (direction) => {
+      azure.seed("right-vault", { "example-secret": "value-from-the-right" });
+
+      await expectRejected(await postUpdate(copyRequest({ direction })));
+
+      expect(azure.valueOf("left-vault", "example-secret")).toBe(SECRET_VALUE);
+    });
+
+    it.each([
+      ["the same vault", "left-vault"],
+      ["the same vault in different case", "LEFT-VAULT"],
+    ])("rejects %s as source and target", async (_label, rightVaultName) => {
+      await expectRejected(await postUpdate(copyRequest({ rightVaultName })));
+    });
+
+    // The name becomes the host part of the vault URL. Anything that is not a
+    // vault name would send the request, and the token, to another host.
+    it.each([
+      "attacker.example.com/",
+      "left-vault.attacker.example.com",
+      "left-vault/secrets",
+      "left-vault#",
+      "left vault",
+      "ab",
+      "a-name-that-is-longer-than-24-characters",
+      "1starts-with-a-digit",
+      "ends-with-a-hyphen-",
+      "double--hyphen",
+      "",
+    ])("rejects the vault name \"%s\"", async (name) => {
+      await expectRejected(await postUpdate(copyRequest({ leftVaultName: name })));
+      await expectRejected(await postUpdate(copyRequest({ rightVaultName: name })));
+    });
+
+    it.each(["example/secret", "example secret", "example.secret", "example?x=1", "", "a".repeat(128)])(
+      "rejects the secret name \"%s\"",
+      async (secretName) => {
+        await expectRejected(await postUpdate(copyRequest({ secretName })));
+      },
+    );
+
+    it("accepts names at the limits of what Key Vault allows", async () => {
+      const shortest = "abc";
+      const longest = `v${"a".repeat(22)}9`;
+      const secretName = "A".repeat(127);
+      azure.seed(shortest, { [secretName]: SECRET_VALUE });
+      azure.seed(longest);
+
+      const response = await postUpdate({ leftVaultName: shortest, rightVaultName: longest, secretName, direction: "leftToRight" });
+
+      expect(response.status).toBe(200);
+      expect(azure.valueOf(longest, secretName)).toBe(SECRET_VALUE);
+    });
+  });
+
   describe("copying", () => {
     it("copies a secret from the left vault to the right vault", async () => {
       const response = await postUpdate(copyRequest());

@@ -2,20 +2,26 @@ import type { SecretProperties} from "@azure/keyvault-secrets";
 
 import {type MergedSecrets, MergeState, type VaultNames} from "~~/types/types";
 import {getSecret, getSecretsList} from "~~/server/services/key-vault-services";
+import {isVaultName} from "~~/server/utils/vault-names";
 
 export default defineEventHandler(async (event) => {
   const session = await getUserSession(event);
-  const queryParams = getQuery(event);
 
   if (!session || !session.user || !session.secure) {
     throw createError({ statusCode: 401, statusMessage: 'Unauthorized' });
   }
 
-  try {
-    const leftVault = await getSecretsList(queryParams.vaultA as string)
-    const rightVault = await getSecretsList(queryParams.vaultB as string);
+  // The names are request input. They are checked before any Azure client is created.
+  const {vaultA, vaultB} = getQuery(event);
+  if (!isVaultName(vaultA) || !isVaultName(vaultB)) {
+    throw createError({ statusCode: 400, statusMessage: 'Invalid vault name' });
+  }
 
-    return await mergeVaults(leftVault, rightVault, {leftVaultName: queryParams.vaultA as string, rightVaultName:queryParams.vaultB as string}) as MergedSecrets[];
+  try {
+    const leftVault = await getSecretsList(vaultA)
+    const rightVault = await getSecretsList(vaultB);
+
+    return await mergeVaults(leftVault, rightVault, {leftVaultName: vaultA, rightVaultName: vaultB}) as MergedSecrets[];
   } catch (e) {
     console.error(e);
     throw createError({ statusCode: 500, statusMessage: 'Something went wrong' });
