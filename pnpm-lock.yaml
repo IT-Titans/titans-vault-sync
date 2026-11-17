@@ -195,7 +195,7 @@ importers:
         version: 0.13.4(@azure/identity@4.14.1(supports-color@10.2.2))(@azure/keyvault-secrets@4.12.0(supports-color@10.2.2))(@nuxt/schema@4.6.4)(@unhead/vue@2.1.17(vue@3.5.45(typescript@5.9.3)))(confbox@0.3.2)(db0@0.3.4)(dotenv@17.4.2)(giget@3.3.1)(ioredis@5.11.1(supports-color@10.2.2))(jiti@2.7.0)(mlly@1.8.2)(oxc-parser@0.143.0)(rolldown@1.2.19)(typescript@5.9.3)(vue@3.5.45(typescript@5.9.3))
       '@nuxt/ui':
         specifier: 4.12.2
-        version: 4.12.2(af9f05c6db0673aec4261a7b252f7482)
+        version: 4.12.2(d5d699823adade03f97b3ef9730182f0)
       '@unhead/vue':
         specifier: ^2.1.17
         version: 2.1.17(vue@3.5.45(typescript@5.9.3))
@@ -218,8 +218,8 @@ importers:
         specifier: 3.5.45
         version: 3.5.45(typescript@5.9.3)
       zod:
-        specifier: ^3.25.76
-        version: 3.25.76
+        specifier: ^4.6.7
+        version: 4.6.7
     devDependencies:
       '@iconify-json/lucide':
         specifier: ^1.2.154
@@ -5576,9 +5576,6 @@ packages:
     resolution: {integrity: sha512-dSvYKdvLsAHCDqPOhIwk/q5CvuWtTB3Dgpoe0uVEFjTzIOAmsQpprX25InCvrvJsirEbu1OHyy67n/kAj1Sw/w==}
     engines: {node: '>=18'}
 
-  zod@3.25.76:
-    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
-
   zod@4.6.7:
     resolution: {integrity: sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==}
 
@@ -6968,7 +6965,7 @@ snapshots:
       rc9: 3.1.0
       std-env: 4.3.0
 
-  '@nuxt/ui@4.12.2(af9f05c6db0673aec4261a7b252f7482)':
+  '@nuxt/ui@4.12.2(d5d699823adade03f97b3ef9730182f0)':
     dependencies:
       '@floating-ui/dom': 1.8.0
       '@iconify/vue': 5.0.5(vue@3.5.45(typescript@5.9.3))
@@ -7039,7 +7036,7 @@ snapshots:
     optionalDependencies:
       valibot: 1.5.0(typescript@5.9.3)
       vue-router: 5.5.1(@vue/compiler-sfc@3.5.45)(esbuild@0.28.2)(rolldown@1.2.19)(rollup@4.68.2)(vite@8.3.8(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))(vue@3.5.45(typescript@5.9.3))
-      zod: 3.25.76
+      zod: 4.6.7
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
@@ -11520,7 +11517,5 @@ snapshots:
       compress-commons: 7.0.1
       normalize-path: 3.0.0
       readable-stream: 4.8.0
-
-  zod@3.25.76: {}
 
   zod@4.6.7: {}
