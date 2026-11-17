@@ -10,8 +10,12 @@ export default defineNuxtConfig({
   },
   css: ["~/assets/css/main.css"],
 
-  future: {
-    compatibilityVersion: 4,
+  typescript: {
+    tsConfig: {
+      // Nuxt 4 type-checks only test/nuxt by default. The tests of this
+      // project live in test/, and vitest.config.ts belongs to them.
+      include: ["../test/**/*", "../vitest.config.ts"],
+    },
   },
   runtimeConfig: {
     oauth: {
