@@ -79,15 +79,25 @@ CI does not build the image.
 ```bash
 pnpm lint
 pnpm typecheck
-pnpm test
+pnpm test:coverage
 pnpm build
 ```
 
-CI runs these four commands on every pull request and on `main`.
+CI runs these four commands on every pull request and on `main`. `pnpm test` runs the tests without measuring coverage.
 
-The test suite is small. It covers one thing: the route that copies a secret rejects requests without a valid session. It runs the route handler in-process with the Azure SDK replaced by test doubles, so it needs no Azure access and sends no requests. `pnpm test:coverage` prints the line coverage of the TypeScript sources.
+The tests run the three server routes in-process on an h3 app. The session and sign-in code of `nuxt-auth-utils` is the real one. The Azure SDK is replaced by an in-memory vault and Microsoft's sign-in endpoints by a stub, so the tests need no Azure access and send no requests. They cover the session requirement of both API routes, input validation, the comparison of two vaults, copying in both directions, failures of a vault and the sign-in callback.
 
-Signing in, loading vaults and copying a secret are not covered by automated tests. They need an app registration and two Key Vaults.
+Coverage is enforced. `pnpm test:coverage` fails when a file of the measured set has less than 90 % of its lines covered. On 2026-11-17 the figure was 100 % of 96 lines, in total and for each of the nine files.
+
+The measured set is defined in `vitest.config.ts`:
+
+- every TypeScript file under `server/`: routes, services and utilities,
+- `types/`, which holds an enum,
+- TypeScript files under `app/`: the composable and the route middleware.
+
+Not measured are the Vue components and pages, `app/app.config.ts`, which only holds theme settings, type declarations, and the configuration files of Nuxt, ESLint and vitest.
+
+Not covered by any automated test: the pages in a browser, and the behaviour against a real Entra tenant and real Key Vaults. Three tests are skipped. Each marks a known defect and states it in a comment.
 
 Pull request titles must be Conventional Commits. The [contributing guide](https://github.com/IT-Titans/.github/blob/main/CONTRIBUTING.md) of the organization applies.
 
@@ -98,14 +108,13 @@ Report vulnerabilities as described in the [security policy](https://github.com/
 ### What the app protects against
 
 - **Requests without a signed-in session.** Both API routes, `GET /api/key-vaults` and `POST /api/key-vaults/update`, answer `401` without a valid session cookie. Reading and copying secrets both require a signed-in user.
-- **Secret values reaching the browser during a comparison.** Values are compared on the server. The list sent to the browser contains names and states only.
+- **Secret values reaching the browser.** Values are compared on the server. The list sent to the browser contains names and states only, and the copy route answers with the name of the copied secret.
+- **Request input reaching Azure unchecked.** Both routes answer `400` before any Azure client is created unless the vault names and the secret name match what Azure Key Vault accepts. A vault name can therefore not point the server at another host. The copy route also rejects an unknown direction and a copy from a vault to itself.
 
 ### What the app does not protect against
 
 - **Signed-in users are not authorized individually.** Every vault access uses the service principal from `AZURE_CLIENT_ID`, not the identity of the signed-in user. Anyone who can sign in can list the secret names of, and copy secrets between, all vaults that service principal can reach. The user's own Azure role assignments are not consulted.
 - **The app does not check which tenant a user belongs to.** Who can sign in is decided by the app registration and by `NUXT_OAUTH_MICROSOFT_TENANT` alone. Register the app as single-tenant and set the variable to your tenant ID.
-- **Vault names are not validated.** They are taken from the request and inserted into the vault URL.
-- **The copy route returns the copied secret, including its value, in the HTTP response.** The user interface discards it, but it is visible in the browser's network log.
 - **Whether two secrets are equal is disclosed.** The states `Merged` and `Conflict` tell a signed-in user whether the values in both vaults match.
 - **There is no audit log.** The app does not record who read or copied what. Key Vault diagnostic logs show the service principal, not the user.
 - **Sessions have no server-side lifetime.** No maximum age is configured. A session cookie stays valid until the browser discards it or `NUXT_SESSION_PASSWORD` changes.
