@@ -75,11 +75,18 @@ export async function createTestApp() {
   return { request, signIn };
 }
 
+/** Extracts "name=value" of a cookie the response sets, or undefined. */
+export function findCookie(response: Response, name: string) {
+  return response.headers.getSetCookie()
+    .map(setCookie => setCookie.split(";")[0]!)
+    .find(cookie => cookie.startsWith(`${name}=`) && cookie.length > name.length + 1);
+}
+
 /** Extracts "name=value" of the session cookie from a response, or fails. */
 export function sessionCookie(response: Response) {
-  const setCookie = response.headers.get("set-cookie");
-  if (!setCookie) {
+  const cookie = findCookie(response, "nuxt-session");
+  if (!cookie) {
     throw new Error("The response did not set a session cookie.");
   }
-  return setCookie.split(";")[0]!;
+  return cookie;
 }
