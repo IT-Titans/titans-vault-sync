@@ -87,7 +87,7 @@ CI runs these four commands on every pull request and on `main`. `pnpm test` run
 
 The tests run the three server routes in-process on an h3 app. The session and sign-in code of `nuxt-auth-utils` is the real one. The Azure SDK is replaced by an in-memory vault and Microsoft's sign-in endpoints by a stub, so the tests need no Azure access and send no requests. They cover the session requirement of both API routes, input validation, the comparison of two vaults, copying in both directions, failures of a vault and the sign-in callback.
 
-Coverage is enforced. `pnpm test:coverage` fails when a file of the measured set has less than 90 % of its lines covered. On 2026-11-17 the figure was 100 % of 96 lines, in total and for each of the nine files.
+Coverage is enforced. `pnpm test:coverage` fails when a file of the measured set has less than 90 % of its lines covered. On 2026-11-17 the figure was 100 % of 127 lines, in total and for each of the eleven files.
 
 The measured set is defined in `vitest.config.ts`:
 
