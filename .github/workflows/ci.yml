@@ -1,4 +1,5 @@
-# CI of this repository: install, lint, type check, test and build.
+# CI of this repository: install, lint, type check, test with the coverage
+# gate, and build.
 #
 # Node.js comes from .nvmrc and pnpm from the "packageManager" field in
 # package.json, so the versions used here are the ones the repository declares.
@@ -53,8 +54,10 @@ jobs:
       - name: Type check
         run: pnpm typecheck
 
-      - name: Test
-        run: pnpm test
+      # Runs the tests and fails when a file of the measured set has less than
+      # 90 % line coverage. The set and the threshold are in vitest.config.ts.
+      - name: Test with the coverage gate
+        run: pnpm test:coverage
 
       - name: Build
         run: pnpm build

@@ -20,10 +20,33 @@ export default defineConfig({
     setupFiles: ["test/setup.ts"],
     coverage: {
       provider: "v8",
-      // TypeScript sources only. Vue components are not measured, because this
-      // setup has no Vue plugin. No thresholds: the figure is reported, not enforced.
-      include: ["server/**/*.ts", "app/**/*.ts", "types/**/*.ts"],
+      // The measured set: the server and the logic that is not a component.
+      // A new TypeScript file in one of these places is measured from the
+      // day it is added, tested or not.
+      include: [
+        // Routes, services and server utilities.
+        "server/**/*.ts",
+        // Types shared by server and client. The file holds an enum, which is code.
+        "types/**/*.ts",
+        // Client-side logic outside components: composables, route middleware, utilities.
+        "app/**/*.ts",
+      ],
+      exclude: [
+        // Declarative theme settings for the UI library. There is no logic to test.
+        "app/app.config.ts",
+        // Type declarations contain no executable code.
+        "**/*.d.ts",
+      ],
+      // Not part of the set, by decision: Vue components and pages (app/**/*.vue).
+      // Not part of the set, because they are tool configuration and not
+      // application code: nuxt.config.ts, eslint.config.mjs and this file.
       reporter: ["text", "text-summary"],
+      thresholds: {
+        // Every file of the set must reach 90 % of its lines. The total then
+        // reaches 90 % as well, because it is the weighted average of the files.
+        lines: 90,
+        perFile: true,
+      },
     },
     server: {
       deps: {
