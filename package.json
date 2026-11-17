@@ -8,7 +8,8 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "test": "vitest run"
   },
   "dependencies": {
     "@azure/core-auth": "^1.9.0",
@@ -26,11 +27,13 @@
     "nuxt": "^3.16.2",
     "nuxt-auth-utils": "0.5.18",
     "typescript": "^5.6.3",
-    "vue": "latest",
+    "vue": "3.5.13",
     "zod": "^3.24.2"
   },
   "devDependencies": {
     "@iconify-json/lucide": "^1.2.35",
-    "@iconify-json/simple-icons": "^1.2.31"
+    "@iconify-json/simple-icons": "^1.2.31",
+    "h3": "1.15.1",
+    "vitest": "^5.1.0"
   }
 }

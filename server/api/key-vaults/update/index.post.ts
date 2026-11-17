@@ -3,6 +3,9 @@ import {SecretClient} from "@azure/keyvault-secrets";
 import type {UpdateSecretsBody} from "~~/types/types";
 
 export default defineEventHandler(async (event) => {
+  // Answer 401 before the body is read or any Azure client is created.
+  await requireUserSession(event);
+
   const body = await readBody<UpdateSecretsBody>(event);
 
   const credential = new DefaultAzureCredential();
