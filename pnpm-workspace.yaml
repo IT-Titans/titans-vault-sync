@@ -11,3 +11,17 @@ allowBuilds:
   '@parcel/watcher': false
   esbuild: false
   vue-demi: false
+
+# Lifts three transitive dependencies above versions with open advisories.
+# Each entry is scoped to the one parent that pins the old version. Remove an
+# entry when the parent itself allows the patched version.
+overrides:
+  # GHSA-g7r4-m6w7-qqqr. fontless 0.2.1 (through @nuxt/fonts 0.14, which
+  # @nuxt/ui 4 requires) declares esbuild ^0.27.0. Fixed in esbuild 0.28.1.
+  'fontless>esbuild': ^0.28.1
+  # GHSA-g3hv-75wg-m249. Fixed in minimatch 11.0.1.
+  # @typescript-eslint/typescript-estree declares ^11.0.1 itself from 8.73.0 on.
+  '@typescript-eslint/typescript-estree>minimatch': ^11.0.1
+  # readdir-glob 3 (through nitropack and archiver 8) declares ^10.2.2;
+  # readdir-glob 4 declares ^11.0.1, but archiver has no release that uses it.
+  'readdir-glob>minimatch': ^11.0.1
