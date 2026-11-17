@@ -119,7 +119,7 @@ Report vulnerabilities as described in the [security policy](https://github.com/
 - **Whether two secrets are equal is disclosed.** The states `Merged` and `Conflict` tell a signed-in user whether the values in both vaults match.
 - **There is no audit log.** The app does not record who read or copied what. Key Vault diagnostic logs show the service principal, not the user.
 - **Sessions have no server-side lifetime.** No maximum age is configured. A session cookie stays valid until the browser discards it or `NUXT_SESSION_PASSWORD` changes.
-- **Some dependency advisories are open.** `pnpm audit` reports advisories that can only be cleared by major upgrades of zod, Nuxt and Nuxt UI.
+- **Two dependency advisories are open.** On 2026-11-17 `pnpm audit` reported one moderate advisory against minimatch and one low advisory against esbuild. Both packages are build tooling and are not part of the server that is deployed. Neither has a fixed version within the ranges of the packages that depend on them.
 
 Until these points are addressed, give the service principal access only to vaults that every person who can sign in is allowed to read from and write to, and restrict who can reach the app.
 
