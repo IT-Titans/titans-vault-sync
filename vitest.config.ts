@@ -13,6 +13,13 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["test/**/*.test.ts"],
+    coverage: {
+      provider: "v8",
+      // TypeScript sources only. Vue components are not measured, because this
+      // setup has no Vue plugin. No thresholds: the figure is reported, not enforced.
+      include: ["server/**/*.ts", "app/**/*.ts", "types/**/*.ts"],
+      reporter: ["text", "text-summary"],
+    },
     server: {
       deps: {
         // Transform the package so the "#imports" alias applies inside it.

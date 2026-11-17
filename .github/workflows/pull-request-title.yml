@@ -1,0 +1,21 @@
+# Checks that the title of a pull request is a Conventional Commit.
+#
+# Pull requests are merged by squash, and the squash commit takes the title.
+# "edited" is part of the trigger so that correcting the title runs the check
+# again.
+#
+# The check appears as "title / Conventional Commit title". Add that name to
+# the ruleset of the default branch after the first run.
+
+name: Pull request title
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  title:
+    uses: IT-Titans/.github/.github/workflows/conventional-pr-title.yml@27d942cfc27f98756b5ea28dcfc13999119ad5df # v1.0.0

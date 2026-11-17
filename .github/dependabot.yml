@@ -1,0 +1,42 @@
+# Dependabot proposes updates once a week. Major versions are left out by
+# default: they need a decision and a look at the release notes, not a routine
+# pull request. Minor and patch updates of the npm packages arrive as one
+# grouped pull request.
+#
+# The commit message prefixes make the pull request titles pass the
+# Conventional Commit check.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: build
+      include: scope
+    groups:
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-major
+      # nuxt-auth-utils is a 0.x release line. A minor version there may change
+      # the session and sign-in behaviour, so it is updated by hand.
+      - dependency-name: nuxt-auth-utils
+        update-types:
+          - version-update:semver-minor
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-major
