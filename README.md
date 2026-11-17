@@ -36,7 +36,7 @@ The server reads its configuration from environment variables. In development th
 | `AZURE_TENANT_ID` | Tenant of the service principal that accesses the vaults. |
 | `AZURE_CLIENT_ID` | Application (client) ID of that service principal. |
 | `AZURE_CLIENT_SECRET` | Client secret of that service principal. |
-| `NUXT_OAUTH_MICROSOFT_TENANT` | Tenant used for user sign-in. Use a tenant ID, not `common` or `organizations`. |
+| `NUXT_OAUTH_MICROSOFT_TENANT` | ID of the tenant whose users may sign in. It must be a tenant ID. With `common`, `organizations` or a domain name every sign-in is refused. |
 | `NUXT_OAUTH_MICROSOFT_CLIENT_ID` | Application (client) ID used for user sign-in. This can be the same app registration. |
 | `NUXT_OAUTH_MICROSOFT_CLIENT_SECRET` | Client secret used for user sign-in. |
 | `NUXT_OAUTH_MICROSOFT_REDIRECT_URL` | Redirect URI registered for the app. It ends in `/api/auth/microsoft`. |
@@ -97,7 +97,7 @@ The measured set is defined in `vitest.config.ts`:
 
 Not measured are the Vue components and pages, `app/app.config.ts`, which only holds theme settings, type declarations, and the configuration files of Nuxt, ESLint and vitest.
 
-Not covered by any automated test: the pages in a browser, and the behaviour against a real Entra tenant and real Key Vaults. Three tests are skipped. Each marks a known defect and states it in a comment.
+Not covered by any automated test: the pages in a browser, and the behaviour against a real Entra tenant and real Key Vaults.
 
 Pull request titles must be Conventional Commits. The [contributing guide](https://github.com/IT-Titans/.github/blob/main/CONTRIBUTING.md) of the organization applies.
 
@@ -110,12 +110,12 @@ Report vulnerabilities as described in the [security policy](https://github.com/
 - **Requests without a signed-in session.** Both API routes, `GET /api/key-vaults` and `POST /api/key-vaults/update`, answer `401` without a valid session cookie. Reading and copying secrets both require a signed-in user.
 - **Secret values reaching the browser.** Values are compared on the server. The list sent to the browser contains names and states only, and the copy route answers with the name of the copied secret.
 - **A sign-in that the visitor did not start.** Every sign-in begins with a random `state` that is kept in a cookie. The callback refuses a code whose `state` does not match, so a prepared link cannot sign a visitor in as someone else.
+- **Users of other tenants.** The sign-in callback reads the tenant of the user from the ID token and creates a session only if it is the tenant in `NUXT_OAUTH_MICROSOFT_TENANT`. Everyone else gets `403`. This holds even if the app registration accepts accounts of other organizations. Guests of your tenant who sign in at your tenant count as users of it.
 - **Request input reaching Azure unchecked.** Both routes answer `400` before any Azure client is created unless the vault names and the secret name match what Azure Key Vault accepts. A vault name can therefore not point the server at another host. The copy route also rejects an unknown direction and a copy from a vault to itself.
 
 ### What the app does not protect against
 
 - **Signed-in users are not authorized individually.** Every vault access uses the service principal from `AZURE_CLIENT_ID`, not the identity of the signed-in user. Anyone who can sign in can list the secret names of, and copy secrets between, all vaults that service principal can reach. The user's own Azure role assignments are not consulted.
-- **The app does not check which tenant a user belongs to.** Who can sign in is decided by the app registration and by `NUXT_OAUTH_MICROSOFT_TENANT` alone. Register the app as single-tenant and set the variable to your tenant ID.
 - **Whether two secrets are equal is disclosed.** The states `Merged` and `Conflict` tell a signed-in user whether the values in both vaults match.
 - **There is no audit log.** The app does not record who read or copied what. Key Vault diagnostic logs show the service principal, not the user.
 - **Sessions have no server-side lifetime.** No maximum age is configured. A session cookie stays valid until the browser discards it or `NUXT_SESSION_PASSWORD` changes.

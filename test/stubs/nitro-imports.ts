@@ -9,7 +9,7 @@ export const TEST_CLIENT_ID = "22222222-2222-2222-2222-222222222222";
 export const TEST_CLIENT_SECRET = "test-only-client-secret";
 export const TEST_REDIRECT_URL = "http://localhost/api/auth/microsoft";
 
-export function useRuntimeConfig() {
+function defaults() {
   return {
     session: {
       name: "nuxt-session",
@@ -18,11 +18,22 @@ export function useRuntimeConfig() {
     },
     oauth: {
       microsoft: {
-        tenant: TEST_TENANT,
+        tenant: TEST_TENANT as string | undefined,
         clientId: TEST_CLIENT_ID,
         clientSecret: TEST_CLIENT_SECRET,
         redirectURL: TEST_REDIRECT_URL,
       },
     },
   };
+}
+
+/** What useRuntimeConfig returns. A test may change it; test/setup.ts resets it before every test. */
+export const runtimeConfig = defaults();
+
+export function resetRuntimeConfig() {
+  Object.assign(runtimeConfig, defaults());
+}
+
+export function useRuntimeConfig() {
+  return runtimeConfig;
 }
