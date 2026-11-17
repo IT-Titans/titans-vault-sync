@@ -109,6 +109,7 @@ Report vulnerabilities as described in the [security policy](https://github.com/
 
 - **Requests without a signed-in session.** Both API routes, `GET /api/key-vaults` and `POST /api/key-vaults/update`, answer `401` without a valid session cookie. Reading and copying secrets both require a signed-in user.
 - **Secret values reaching the browser.** Values are compared on the server. The list sent to the browser contains names and states only, and the copy route answers with the name of the copied secret.
+- **A sign-in that the visitor did not start.** Every sign-in begins with a random `state` that is kept in a cookie. The callback refuses a code whose `state` does not match, so a prepared link cannot sign a visitor in as someone else.
 - **Request input reaching Azure unchecked.** Both routes answer `400` before any Azure client is created unless the vault names and the secret name match what Azure Key Vault accepts. A vault name can therefore not point the server at another host. The copy route also rejects an unknown direction and a copy from a vault to itself.
 
 ### What the app does not protect against
@@ -118,7 +119,6 @@ Report vulnerabilities as described in the [security policy](https://github.com/
 - **Whether two secrets are equal is disclosed.** The states `Merged` and `Conflict` tell a signed-in user whether the values in both vaults match.
 - **There is no audit log.** The app does not record who read or copied what. Key Vault diagnostic logs show the service principal, not the user.
 - **Sessions have no server-side lifetime.** No maximum age is configured. A session cookie stays valid until the browser discards it or `NUXT_SESSION_PASSWORD` changes.
-- **The sign-in flow sends no `state` parameter**, so the callback is not protected against login CSRF.
 - **Some dependency advisories are open.** `pnpm audit` reports advisories that can only be cleared by major upgrades of zod, Nuxt and Nuxt UI.
 
 Until these points are addressed, give the service principal access only to vaults that every person who can sign in is allowed to read from and write to, and restrict who can reach the app.
