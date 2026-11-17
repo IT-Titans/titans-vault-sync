@@ -116,4 +116,6 @@ Until these points are addressed, give the service principal access only to vaul
 
 ## License
 
-No license has been chosen for this repository yet. Until a LICENSE file is added, all rights are reserved by IT Titans GmbH.
+Copyright 2025 IT Titans GmbH
+
+Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for the full text. The license does not grant permission to use the trade names, trademarks, service marks or product names of IT Titans GmbH (section 6 of the license).
