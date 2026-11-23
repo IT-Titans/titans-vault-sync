@@ -35,7 +35,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@iconify-json/lucide": "^1.2.154",
+    "@iconify-json/lucide": "^1.2.155",
     "@iconify-json/simple-icons": "^1.2.102",
     "@vitest/coverage-v8": "5.1.0",
     "h3": "1.15.11",
